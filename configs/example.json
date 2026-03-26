@@ -1,0 +1,29 @@
+{
+  "name": "Dad",
+  "email": "dad@example.com",
+  "schedule": {
+    "times": ["06:00"],
+    "timezone": "America/New_York",
+    "weekends": false,
+    "weekly_recap": false
+  },
+  "watchlist": ["AAPL", "NVDA", "TSLA", "SPY", "QQQ"],
+  "sectors": ["Technology", "Semiconductors"],
+  "asset_types": ["us_stocks"],
+  "trading_style": "swing",
+  "events_attention": "high",
+  "news_priorities": ["earnings", "fed_rates", "analyst_ratings"],
+  "exclusions": {
+    "tickers": [],
+    "topics": ["penny stocks"]
+  },
+  "must_include": ["fed_announcement", "stock_halt"],
+  "display": {
+    "detail_level": "paragraph",
+    "max_items": 15,
+    "market_mood": true
+  },
+  "alerts": {
+    "breaking_news": false
+  }
+}

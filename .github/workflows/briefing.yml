@@ -1,0 +1,37 @@
+name: Daily Briefing
+
+on:
+  schedule:
+    # Runs every hour on weekdays so schedule-match can pick the right users
+    # GitHub Actions cron is UTC
+    - cron: '0 10,14,20,22 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      user:
+        description: 'Run for specific user (leave blank for schedule-match)'
+        required: false
+        type: string
+
+jobs:
+  send-briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Run briefing
+        run: |
+          if [ -n "${{ inputs.user }}" ]; then
+            node src/index.js --user "${{ inputs.user }}"
+          else
+            node src/index.js --schedule-match
+          fi
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

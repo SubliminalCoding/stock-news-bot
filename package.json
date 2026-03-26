@@ -1,0 +1,21 @@
+{
+  "name": "stock-news-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Personalized daily stock market briefing bot",
+  "scripts": {
+    "briefing": "node src/index.js",
+    "briefing:user": "node src/index.js --user",
+    "test:fetch": "node src/fetch/finnhub.js",
+    "test:send": "node src/send.js"
+  },
+  "dependencies": {
+    "resend": "^4.0.0"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

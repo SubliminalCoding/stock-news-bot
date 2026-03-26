@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock News Bot Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base: #0a0e1a;
+      --bg-card: #111827;
+      --bg-input: #0d1117;
+      --bg-hover: #1a2233;
+      --bg-selected: rgba(56, 189, 248, 0.08);
+      --border: #1e293b;
+      --border-hover: #334155;
+      --border-active: #38bdf8;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #38bdf8;
+      --accent-hover: #7dd3fc;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #4ade80;
+      --success-glow: rgba(74, 222, 128, 0.15);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,0.4);
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .header .icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 26px;
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .header .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-bottom: 40px;
+      overflow: hidden;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #818cf8);
+      border-radius: 3px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+    }
+
+    /* Section cards */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+
+    .section:hover {
+      border-color: var(--border-hover);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .section-number {
+      width: 28px;
+      height: 28px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .section h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    /* Questions */
+    .question {
+      margin-bottom: 28px;
+    }
+
+    .question:last-child {
+      margin-bottom: 0;
+    }
+
+    .question label.main {
+      display: block;
+      font-weight: 500;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .question .hint {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .question .limit-hint {
+      display: inline-block;
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    /* Text inputs */
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    input[type="text"]::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    /* Checkbox & radio groups */
+    .checkbox-group, .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .checkbox-group label, .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      padding: 10px 14px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      transition: all var(--transition);
+      user-select: none;
+    }
+
+    .checkbox-group label:hover, .radio-group label:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-hover);
+    }
+
+    .checkbox-group label:has(input:checked),
+    .radio-group label:has(input:checked) {
+      border-color: var(--border-active);
+      background: var(--bg-selected);
+      box-shadow: 0 0 0 1px var(--accent-glow);
+    }
+
+    .checkbox-group label span, .radio-group label span {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      transition: color var(--transition);
+    }
+
+    .checkbox-group input:checked + span,
+    .radio-group input:checked + span {
+      color: var(--text-primary);
+    }
+
+    /* Custom checkbox/radio styling */
+    input[type="checkbox"], input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--border-hover);
+      border-radius: 5px;
+      background: transparent;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+
+    input[type="radio"] {
+      border-radius: 50%;
+    }
+
+    input[type="checkbox"]:checked, input[type="radio"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      width: 5px;
+      height: 9px;
+      border: solid var(--bg-base);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translate(-0.5px, -0.5px);
+    }
+
+    input[type="radio"]:checked::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--bg-base);
+      border-radius: 50%;
+    }
+
+    /* Sector grid layout */
+    .grid-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .grid-group label {
+      padding: 9px 12px;
+    }
+
+    .grid-group label span {
+      font-size: 0.825rem;
+    }
+
+    /* Submit button */
+    .submit-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 0 20px var(--accent-glow);
+      margin-top: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .submit-btn:hover {
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Success screen */
+    .success {
+      display: none;
+      text-align: center;
+      padding: 80px 24px;
+      animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes checkDraw {
+      from { stroke-dashoffset: 24; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .success .checkmark-circle {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--success), #22d3ee);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+      box-shadow: 0 0 40px var(--success-glow);
+      animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+    }
+
+    .success .checkmark-circle svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .success .checkmark-circle svg path {
+      stroke: var(--bg-base);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke-dasharray: 24;
+      animation: checkDraw 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
+    }
+
+    .success h2 {
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .success p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      max-width: 380px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .container { padding: 24px 16px 40px; }
+      .section { padding: 20px; }
+      .grid-group { grid-template-columns: 1fr; }
+      .header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">&#9889;</div>
+      <h1>Stock News Bot</h1>
+      <p class="subtitle">Set up your personalized daily market briefing</p>
+    </div>
+
+    <div class="progress-bar"><div class="fill" id="progress"></div></div>
+
+    <form id="questionnaire" name="stock-news-questionnaire" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <input type="hidden" name="form-name" value="stock-news-questionnaire">
+      <p style="display:none"><label>Don't fill this out: <input name="bot-field"></label></p>
+
+      <!-- Section 1 -->
+      <div class="section" data-section="1">
+        <div class="section-header">
+          <div class="section-number">1</div>
+          <h2>What do you follow?</h2>
+        </div>
+
+        <div class="question">
+          <label class="main" for="tickers">Your tickers</label>
+          <p class="hint">Stocks, ETFs, or other symbols you want to track (up to 30). Separate with commas.</p>
+          <input type="text" id="tickers" name="tickers" placeholder="AAPL, NVDA, TSLA, SPY, QQQ, AMZN">
+        </div>
+
+        <div class="question">
+          <label class="main">Sectors</label>
+          <p class="hint">Pick any you want broader coverage on.</p>
+          <div class="checkbox-group grid-group">
+            <label><input type="checkbox" name="sectors" value="Technology"><span>Technology</span></label>
+            <label><input type="checkbox" name="sectors" value="Semiconductors"><span>Semiconductors</span></label>
+            <label><input type="checkbox" name="sectors" value="Financials"><span>Financials</span></label>
+            <label><input type="checkbox" name="sectors" value="Energy"><span>Energy</span></label>
+            <label><input type="checkbox" name="sectors" value="Healthcare/Biotech"><span>Healthcare / Biotech</span></label>
+            <label><input type="checkbox" name="sectors" value="Consumer"><span>Consumer</span></label>
+            <label><input type="checkbox" name="sectors" value="Industrials"><span>Industrials</span></label>
+            <label><input type="checkbox" name="sectors" value="Real Estate"><span>Real Estate</span></label>
+            <label><input type="checkbox" name="sectors" value="Defense"><span>Defense</span></label>
+            <label><input type="checkbox" name="sectors" value="EV/Clean Energy"><span>EV / Clean Energy</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Anything besides US stocks?</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="assets" value="US stocks only"><span>US stocks is all I need</span></label>
+            <label><input type="checkbox" name="assets" value="Crypto"><span>Crypto</span></label>
+            <label><input type="checkbox" name="assets" value="International markets"><span>International markets</span></label>
+            <label><input type="checkbox" name="assets" value="Commodities"><span>Commodities (gold, oil, etc.)</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="section" data-section="2">
+        <div class="section-header">
+          <div class="section-number">2</div>
+          <h2>How do you trade?</h2>
+        </div>
+
+        <div class="question">
+          <label class="main">Your style</label>
+          <div class="radio-group">
+            <label><input type="radio" name="style" value="Day trading"><span>Day trading (in and out same day)</span></label>
+            <label><input type="radio" name="style" value="Swing trading"><span>Swing trading (hold a few days to a couple weeks)</span></label>
+            <label><input type="radio" name="style" value="Longer-term investing"><span>Longer-term investing (weeks to months or more)</span></label>
+            <label><input type="radio" name="style" value="Mix"><span>Mix of the above</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Do you follow big market events?</label>
+          <p class="hint">Earnings, Fed meetings, jobs reports, etc.</p>
+          <div class="radio-group">
+            <label><input type="radio" name="events" value="Yes, very closely"><span>Yes, very closely</span></label>
+            <label><input type="radio" name="events" value="Somewhat"><span>Somewhat</span></label>
+            <label><input type="radio" name="events" value="Not really"><span>Not really</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="section" data-section="3">
+        <div class="section-header">
+          <div class="section-number">3</div>
+          <h2>What news matters most?</h2>
+        </div>
+
+        <div class="question">
+          <label class="main">Top news types</label>
+          <span class="limit-hint">Pick up to 3</span>
+          <div class="checkbox-group" id="news-types">
+            <label><input type="checkbox" name="news" value="Earnings reports"><span>Earnings reports</span></label>
+            <label><input type="checkbox" name="news" value="Economic data"><span>Economic data (jobs, inflation, GDP)</span></label>
+            <label><input type="checkbox" name="news" value="Fed/interest rates"><span>Fed and interest rate news</span></label>
+            <label><input type="checkbox" name="news" value="Analyst upgrades/downgrades"><span>Analyst upgrades / downgrades</span></label>
+            <label><input type="checkbox" name="news" value="Mergers/IPOs/deals"><span>Mergers, IPOs, and deals</span></label>
+            <label><input type="checkbox" name="news" value="Insider buying/selling"><span>Insider buying / selling</span></label>
+            <label><input type="checkbox" name="news" value="Political/regulatory"><span>Political / regulatory news</span></label>
+            <label><input type="checkbox" name="news" value="Social media/retail activity"><span>Social media buzz and retail trader activity</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main" for="exclude-topics">Anything to exclude?</label>
+          <p class="hint">Topics you never want to see.</p>
+          <input type="text" id="exclude-topics" name="exclude-topics" placeholder="penny stocks, crypto spam, meme stock hype">
+        </div>
+      </div>
+
+      <!-- Section 4 -->
+      <div class="section" data-section="4">
+        <div class="section-header">
+          <div class="section-number">4</div>
+          <h2>How detailed should it be?</h2>
+        </div>
+
+        <div class="question">
+          <label class="main">Detail per story</label>
+          <div class="radio-group">
+            <label><input type="radio" name="detail" value="Headlines only"><span>Just the headlines</span></label>
+            <label><input type="radio" name="detail" value="One-line summaries"><span>One-line summary for each</span></label>
+            <label><input type="radio" name="detail" value="Short paragraphs" checked><span>A short paragraph with context</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Items per daily email</label>
+          <div class="radio-group">
+            <label><input type="radio" name="count" value="5-10"><span>5 - 10 (just the highlights)</span></label>
+            <label><input type="radio" name="count" value="10-20" checked><span>10 - 20 (good balance)</span></label>
+            <label><input type="radio" name="count" value="20+"><span>20+ (give me everything)</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Include a market mood summary?</label>
+          <p class="hint">Fear & Greed index, VIX, overall sentiment.</p>
+          <div class="radio-group">
+            <label><input type="radio" name="mood" value="Yes" checked><span>Yes</span></label>
+            <label><input type="radio" name="mood" value="No"><span>No</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5 -->
+      <div class="section" data-section="5">
+        <div class="section-header">
+          <div class="section-number">5</div>
+          <h2>When and how?</h2>
+        </div>
+
+        <div class="question">
+          <label class="main">Delivery times</label>
+          <p class="hint">Pick all that apply.</p>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="delivery" value="6:00 AM ET"><span>Pre-market (6:00 AM ET)</span></label>
+            <label><input type="checkbox" name="delivery" value="9:30 AM ET"><span>Market open (9:30 AM ET)</span></label>
+            <label><input type="checkbox" name="delivery" value="4:00 PM ET"><span>Market close (4:00 PM ET)</span></label>
+            <label><input type="checkbox" name="delivery" value="6:00 PM ET"><span>Evening recap (6:00 PM ET)</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Timezone</label>
+          <div class="radio-group grid-group">
+            <label><input type="radio" name="timezone" value="US/Eastern"><span>Eastern</span></label>
+            <label><input type="radio" name="timezone" value="US/Central"><span>Central</span></label>
+            <label><input type="radio" name="timezone" value="US/Mountain"><span>Mountain</span></label>
+            <label><input type="radio" name="timezone" value="US/Pacific"><span>Pacific</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Weekends</label>
+          <div class="radio-group">
+            <label><input type="radio" name="weekends" value="No" checked><span>No briefing on weekends</span></label>
+            <label><input type="radio" name="weekends" value="Sunday recap"><span>Weekly recap on Sunday</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Breaking news alerts?</label>
+          <p class="hint">Outside your regular scheduled briefing.</p>
+          <div class="radio-group">
+            <label><input type="radio" name="alerts" value="Yes"><span>Yes, for major events (halts, emergency Fed, etc.)</span></label>
+            <label><input type="radio" name="alerts" value="No" checked><span>No, just the scheduled emails</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6 -->
+      <div class="section" data-section="6">
+        <div class="section-header">
+          <div class="section-number">6</div>
+          <h2>Anything else?</h2>
+        </div>
+
+        <div class="question">
+          <label class="main" for="blacklist">Always exclude</label>
+          <p class="hint">Tickers or topics that should never appear.</p>
+          <input type="text" id="blacklist" name="blacklist" placeholder="DWAC, penny stocks under $1">
+        </div>
+
+        <div class="question">
+          <label class="main" for="must-include">Always include</label>
+          <p class="hint">Signals that should always show up, no matter what.</p>
+          <input type="text" id="must-include" name="must-include" placeholder="any Fed announcement, any stock halt">
+        </div>
+
+        <div class="question">
+          <label class="main" for="other">Other preferences</label>
+          <textarea id="other" name="other" placeholder="Anything else you'd like..."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">Submit your preferences</button>
+    </form>
+
+    <div class="success" id="success">
+      <div class="checkmark-circle">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h2>You're all set!</h2>
+      <p>Your answers have been sent to Matt. He'll use these to build your personalized daily stock briefing.</p>
+    </div>
+  </div>
+
+  <script>
+    // Progress bar tracking
+    const form = document.getElementById('questionnaire');
+    const progress = document.getElementById('progress');
+    const sections = form.querySelectorAll('.section');
+    const totalSections = sections.length;
+
+    function updateProgress() {
+      let filled = 0;
+      sections.forEach(section => {
+        const inputs = section.querySelectorAll('input[type="text"], textarea');
+        const checks = section.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked');
+        if (inputs.length && [...inputs].some(i => i.value.trim()) || checks.length) filled++;
+      });
+      progress.style.width = Math.round((filled / totalSections) * 100) + '%';
+    }
+
+    form.addEventListener('input', updateProgress);
+    form.addEventListener('change', updateProgress);
+
+    // Limit news type checkboxes to 3
+    const newsBoxes = document.querySelectorAll('#news-types input[type="checkbox"]');
+    newsBoxes.forEach(box => {
+      box.addEventListener('change', () => {
+        const checked = document.querySelectorAll('#news-types input:checked');
+        if (checked.length > 3) {
+          box.checked = false;
+        }
+      });
+    });
+
+    // Submit to Netlify via fetch, then show success screen
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('.submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(new FormData(form)).toString()
+      })
+      .then(() => {
+        form.style.display = 'none';
+        document.querySelector('.progress-bar').style.display = 'none';
+        document.getElementById('success').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Submit your preferences';
+        alert('Something went wrong. Check your connection and try again.');
+      });
+    });
+
+    // Init progress for pre-checked defaults
+    updateProgress();
+  </script>
+</body>
+</html>

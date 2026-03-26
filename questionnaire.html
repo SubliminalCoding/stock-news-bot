@@ -360,11 +360,9 @@
       transform: none;
     }
 
-    /* Success screen */
-    .success {
+    /* Results screen */
+    .results {
       display: none;
-      text-align: center;
-      padding: 80px 24px;
       animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -373,58 +371,75 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    @keyframes scaleIn {
-      from { opacity: 0; transform: scale(0.5); }
-      to { opacity: 1; transform: scale(1); }
+    .results-header {
+      text-align: center;
+      margin-bottom: 24px;
     }
 
-    @keyframes checkDraw {
-      from { stroke-dashoffset: 24; }
-      to { stroke-dashoffset: 0; }
-    }
-
-    .success .checkmark-circle {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, var(--success), #22d3ee);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 28px;
-      box-shadow: 0 0 40px var(--success-glow);
-      animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
-    }
-
-    .success .checkmark-circle svg {
-      width: 36px;
-      height: 36px;
-    }
-
-    .success .checkmark-circle svg path {
-      stroke: var(--bg-base);
-      stroke-width: 3;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      fill: none;
-      stroke-dasharray: 24;
-      animation: checkDraw 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
-    }
-
-    .success h2 {
-      color: var(--text-primary);
-      font-size: 1.5rem;
+    .results-header h2 {
+      color: var(--success);
+      font-size: 1.3rem;
       font-weight: 700;
-      margin-bottom: 10px;
-      letter-spacing: -0.02em;
+      margin-bottom: 6px;
     }
 
-    .success p {
+    .results-header p {
       color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .results-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .results-card pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .copy-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--success), #22d3ee);
+      color: #0a0e1a;
       font-size: 0.95rem;
-      max-width: 380px;
-      margin: 0 auto;
-      line-height: 1.6;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 0 20px var(--success-glow);
+      letter-spacing: -0.01em;
+    }
+
+    .copy-btn:hover {
+      box-shadow: 0 0 30px rgba(74, 222, 128, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .copy-btn:active {
+      transform: translateY(0);
+    }
+
+    .copy-btn.copied {
+      background: var(--success);
+    }
+
+    .results-hint {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 16px;
     }
 
     /* Responsive */
@@ -446,9 +461,7 @@
 
     <div class="progress-bar"><div class="fill" id="progress"></div></div>
 
-    <form id="questionnaire" name="stock-news-questionnaire" method="POST" data-netlify="true" netlify-honeypot="bot-field">
-      <input type="hidden" name="form-name" value="stock-news-questionnaire">
-      <p style="display:none"><label>Don't fill this out: <input name="bot-field"></label></p>
+    <form id="questionnaire">
 
       <!-- Section 1 -->
       <div class="section" data-section="1">
@@ -657,12 +670,16 @@
       <button type="submit" class="submit-btn">Submit your preferences</button>
     </form>
 
-    <div class="success" id="success">
-      <div class="checkmark-circle">
-        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+    <div class="results" id="results">
+      <div class="results-header">
+        <h2>Your selections are ready!</h2>
+        <p>Copy the text below and send it to Matt via text or email.</p>
       </div>
-      <h2>You're all set!</h2>
-      <p>Your answers have been sent to Matt. He'll use these to build your personalized daily stock briefing.</p>
+      <div class="results-card">
+        <pre id="output"></pre>
+      </div>
+      <button class="copy-btn" id="copy-btn">Copy to clipboard</button>
+      <p class="results-hint">After copying, paste it into a text message or email to Matt.</p>
     </div>
   </div>
 
@@ -697,29 +714,65 @@
       });
     });
 
-    // Submit to Netlify via fetch, then show success screen
+    // Show results on submit
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const btn = form.querySelector('.submit-btn');
-      btn.disabled = true;
-      btn.textContent = 'Sending...';
 
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(new FormData(form)).toString()
-      })
-      .then(() => {
-        form.style.display = 'none';
-        document.querySelector('.progress-bar').style.display = 'none';
-        document.getElementById('success').style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      })
-      .catch(() => {
-        btn.disabled = false;
-        btn.textContent = 'Submit your preferences';
-        alert('Something went wrong. Check your connection and try again.');
-      });
+      const getChecked = (name) =>
+        [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
+      const getRadio = (name) => {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : '—';
+      };
+      const getVal = (id) => document.getElementById(id).value.trim() || '—';
+
+      const lines = [
+        'STOCK NEWS BOT - MY PREFERENCES',
+        '================================',
+        '',
+        'Tickers: ' + getVal('tickers'),
+        'Sectors: ' + (getChecked('sectors').join(', ') || '—'),
+        'Other assets: ' + (getChecked('assets').join(', ') || '—'),
+        '',
+        'Trading style: ' + getRadio('style'),
+        'Market events: ' + getRadio('events'),
+        '',
+        'Top news types: ' + (getChecked('news').join(', ') || '—'),
+        'Exclude: ' + getVal('exclude-topics'),
+        '',
+        'Detail level: ' + getRadio('detail'),
+        'Items per email: ' + getRadio('count'),
+        'Market mood: ' + getRadio('mood'),
+        '',
+        'Delivery times: ' + (getChecked('delivery').join(', ') || '—'),
+        'Timezone: ' + getRadio('timezone'),
+        'Weekends: ' + getRadio('weekends'),
+        'Breaking alerts: ' + getRadio('alerts'),
+        '',
+        'Always exclude: ' + getVal('blacklist'),
+        'Always include: ' + getVal('must-include'),
+        'Other notes: ' + getVal('other'),
+        '',
+        '================================',
+      ];
+
+      document.getElementById('output').textContent = lines.join('\n');
+      form.style.display = 'none';
+      document.querySelector('.progress-bar').style.display = 'none';
+      document.getElementById('results').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Copy button
+    document.getElementById('copy-btn').addEventListener('click', function() {
+      const text = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(text);
+      this.textContent = 'Copied!';
+      this.classList.add('copied');
+      setTimeout(() => {
+        this.textContent = 'Copy to clipboard';
+        this.classList.remove('copied');
+      }, 2000);
     });
 
     // Init progress for pre-checked defaults

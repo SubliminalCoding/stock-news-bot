@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock News Bot Setup</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 4px;
+      color: #f8fafc;
+    }
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+    .section {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .section h2 {
+      font-size: 1.15rem;
+      color: #38bdf8;
+      margin-bottom: 20px;
+    }
+    .question {
+      margin-bottom: 24px;
+    }
+    .question:last-child {
+      margin-bottom: 0;
+    }
+    .question label.main {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #f1f5f9;
+    }
+    .question .hint {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .checkbox-group, .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .checkbox-group label, .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 8px 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      transition: border-color 0.15s;
+    }
+    .checkbox-group label:hover, .radio-group label:hover {
+      border-color: #475569;
+    }
+    .checkbox-group input:checked + span,
+    .radio-group input:checked + span {
+      color: #38bdf8;
+    }
+    .checkbox-group label:has(input:checked),
+    .radio-group label:has(input:checked) {
+      border-color: #38bdf8;
+      background: #1e3a5f;
+    }
+    input[type="checkbox"], input[type="radio"] {
+      accent-color: #38bdf8;
+      width: 18px;
+      height: 18px;
+    }
+    .submit-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #38bdf8;
+      color: #0f172a;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .submit-btn:hover {
+      background: #7dd3fc;
+    }
+    .results {
+      display: none;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 20px;
+    }
+    .results h2 {
+      color: #4ade80;
+      margin-bottom: 12px;
+    }
+    .results pre {
+      background: #0f172a;
+      padding: 16px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .copy-btn {
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: #4ade80;
+      color: #0f172a;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .copy-btn:hover { background: #86efac; }
+    .copied { background: #22c55e; }
+    .divider { height: 1px; background: #334155; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stock News Bot Setup</h1>
+    <p class="subtitle">Quick setup for your personalized daily market briefing. Takes about 5 minutes.</p>
+
+    <form id="questionnaire">
+
+      <!-- Section 1 -->
+      <div class="section">
+        <h2>1. What do you follow?</h2>
+
+        <div class="question">
+          <label class="main" for="tickers">What are your tickers?</label>
+          <p class="hint">List the stocks, ETFs, or other symbols you want to track (up to 30). Separate with commas.</p>
+          <input type="text" id="tickers" placeholder="e.g. AAPL, NVDA, TSLA, SPY, QQQ, AMZN">
+        </div>
+
+        <div class="question">
+          <label class="main">Any sectors you want broader coverage on?</label>
+          <p class="hint">Pick any that apply.</p>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="sectors" value="Technology"><span>Technology</span></label>
+            <label><input type="checkbox" name="sectors" value="Semiconductors"><span>Semiconductors</span></label>
+            <label><input type="checkbox" name="sectors" value="Financials"><span>Financials</span></label>
+            <label><input type="checkbox" name="sectors" value="Energy"><span>Energy</span></label>
+            <label><input type="checkbox" name="sectors" value="Healthcare/Biotech"><span>Healthcare / Biotech</span></label>
+            <label><input type="checkbox" name="sectors" value="Consumer"><span>Consumer</span></label>
+            <label><input type="checkbox" name="sectors" value="Industrials"><span>Industrials</span></label>
+            <label><input type="checkbox" name="sectors" value="Real Estate"><span>Real Estate</span></label>
+            <label><input type="checkbox" name="sectors" value="Defense"><span>Defense</span></label>
+            <label><input type="checkbox" name="sectors" value="EV/Clean Energy"><span>EV / Clean Energy</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Do you follow anything besides US stocks?</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="assets" value="US stocks only"><span>US stocks is all I need</span></label>
+            <label><input type="checkbox" name="assets" value="Crypto"><span>Crypto</span></label>
+            <label><input type="checkbox" name="assets" value="International markets"><span>International markets</span></label>
+            <label><input type="checkbox" name="assets" value="Commodities"><span>Commodities (gold, oil, etc.)</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="section">
+        <h2>2. How do you trade?</h2>
+
+        <div class="question">
+          <label class="main">What best describes your style?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="style" value="Day trading"><span>Day trading (in and out same day)</span></label>
+            <label><input type="radio" name="style" value="Swing trading"><span>Swing trading (hold a few days to a couple weeks)</span></label>
+            <label><input type="radio" name="style" value="Longer-term investing"><span>Longer-term investing (weeks to months or more)</span></label>
+            <label><input type="radio" name="style" value="Mix"><span>Mix of the above</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Do you pay attention to big market events (earnings, Fed meetings, etc.)?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="events" value="Yes, very closely"><span>Yes, very closely</span></label>
+            <label><input type="radio" name="events" value="Somewhat"><span>Somewhat</span></label>
+            <label><input type="radio" name="events" value="Not really"><span>Not really</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="section">
+        <h2>3. What news matters most?</h2>
+
+        <div class="question">
+          <label class="main">Pick your top 3 most important news types:</label>
+          <div class="checkbox-group" id="news-types">
+            <label><input type="checkbox" name="news" value="Earnings reports"><span>Earnings reports</span></label>
+            <label><input type="checkbox" name="news" value="Economic data"><span>Economic data (jobs, inflation, GDP)</span></label>
+            <label><input type="checkbox" name="news" value="Fed/interest rates"><span>Fed and interest rate news</span></label>
+            <label><input type="checkbox" name="news" value="Analyst upgrades/downgrades"><span>Analyst upgrades / downgrades</span></label>
+            <label><input type="checkbox" name="news" value="Mergers/IPOs/deals"><span>Mergers, IPOs, and deals</span></label>
+            <label><input type="checkbox" name="news" value="Insider buying/selling"><span>Insider buying / selling</span></label>
+            <label><input type="checkbox" name="news" value="Political/regulatory"><span>Political / regulatory news</span></label>
+            <label><input type="checkbox" name="news" value="Social media/retail activity"><span>Social media buzz and retail trader activity</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main" for="exclude-topics">Anything you definitely don't want to see?</label>
+          <input type="text" id="exclude-topics" placeholder="e.g. penny stocks, crypto spam, meme stock hype">
+        </div>
+      </div>
+
+      <!-- Section 4 -->
+      <div class="section">
+        <h2>4. How detailed should it be?</h2>
+
+        <div class="question">
+          <label class="main">How much detail per story?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="detail" value="Headlines only"><span>Just the headlines</span></label>
+            <label><input type="radio" name="detail" value="One-line summaries"><span>One-line summary for each</span></label>
+            <label><input type="radio" name="detail" value="Short paragraphs" checked><span>A short paragraph with context (recommended)</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">How many items in a typical daily email?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="count" value="5-10"><span>5-10 (just the highlights)</span></label>
+            <label><input type="radio" name="count" value="10-20" checked><span>10-20 (good balance)</span></label>
+            <label><input type="radio" name="count" value="20+"><span>20+ (give me everything)</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Include a "market mood" summary?</label>
+          <p class="hint">Fear & Greed index, VIX, overall market sentiment.</p>
+          <div class="radio-group">
+            <label><input type="radio" name="mood" value="Yes" checked><span>Yes</span></label>
+            <label><input type="radio" name="mood" value="No"><span>No</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5 -->
+      <div class="section">
+        <h2>5. When and how?</h2>
+
+        <div class="question">
+          <label class="main">When do you want your briefing?</label>
+          <p class="hint">Pick all that apply.</p>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="delivery" value="6:00 AM ET"><span>Early morning before market opens (6:00 AM ET)</span></label>
+            <label><input type="checkbox" name="delivery" value="9:30 AM ET"><span>Market open (9:30 AM ET)</span></label>
+            <label><input type="checkbox" name="delivery" value="4:00 PM ET"><span>After market close (4:00 PM ET)</span></label>
+            <label><input type="checkbox" name="delivery" value="6:00 PM ET"><span>Evening recap (6:00 PM ET)</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main" for="timezone">What's your timezone?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="timezone" value="US/Eastern"><span>Eastern</span></label>
+            <label><input type="radio" name="timezone" value="US/Central"><span>Central</span></label>
+            <label><input type="radio" name="timezone" value="US/Mountain"><span>Mountain</span></label>
+            <label><input type="radio" name="timezone" value="US/Pacific"><span>Pacific</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Anything on weekends?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="weekends" value="No" checked><span>No, weekdays only</span></label>
+            <label><input type="radio" name="weekends" value="Sunday recap"><span>Send a weekly recap on Sunday</span></label>
+          </div>
+        </div>
+
+        <div class="question">
+          <label class="main">Want alerts for major breaking news?</label>
+          <p class="hint">Outside your regular scheduled briefing.</p>
+          <div class="radio-group">
+            <label><input type="radio" name="alerts" value="Yes"><span>Yes, for big stuff (market halts, emergency Fed moves, etc.)</span></label>
+            <label><input type="radio" name="alerts" value="No" checked><span>No, just the scheduled emails</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6 -->
+      <div class="section">
+        <h2>6. Anything else?</h2>
+
+        <div class="question">
+          <label class="main" for="blacklist">Any tickers or topics to always exclude?</label>
+          <input type="text" id="blacklist" placeholder="e.g. DWAC, penny stocks under $1">
+        </div>
+
+        <div class="question">
+          <label class="main" for="must-include">Anything that should always be included no matter what?</label>
+          <input type="text" id="must-include" placeholder="e.g. any Fed announcement, any stock halt">
+        </div>
+
+        <div class="question">
+          <label class="main" for="other">Any other preferences or special requests?</label>
+          <textarea id="other" placeholder="Write anything here"></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">Submit</button>
+    </form>
+
+    <div class="results" id="results">
+      <h2>All set!</h2>
+      <p style="color: #94a3b8; margin-bottom: 12px;">Copy your answers below and text or email them to Matt. You can use the buttons underneath.</p>
+      <pre id="output"></pre>
+      <button class="copy-btn" id="copy-btn">Copy to clipboard</button>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="copy-btn" id="text-btn" style="background: #38bdf8; flex: 1;">Text it</button>
+        <button class="copy-btn" id="email-btn" style="background: #a78bfa; flex: 1;">Email it</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Limit news type checkboxes to 3
+    const newsBoxes = document.querySelectorAll('#news-types input[type="checkbox"]');
+    newsBoxes.forEach(box => {
+      box.addEventListener('change', () => {
+        const checked = document.querySelectorAll('#news-types input:checked');
+        if (checked.length > 3) {
+          box.checked = false;
+        }
+      });
+    });
+
+    document.getElementById('questionnaire').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const getChecked = (name) =>
+        [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
+      const getRadio = (name) => {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : '(not answered)';
+      };
+      const getVal = (id) => document.getElementById(id).value.trim() || '(none)';
+
+      const answers = {
+        'Tickers': getVal('tickers'),
+        'Sectors': getChecked('sectors').join(', ') || '(none)',
+        'Other asset types': getChecked('assets').join(', ') || '(none)',
+        'Trading style': getRadio('style'),
+        'Follows market events': getRadio('events'),
+        'Top news types': getChecked('news').join(', ') || '(none)',
+        'Exclude topics': getVal('exclude-topics'),
+        'Detail level': getRadio('detail'),
+        'Items per email': getRadio('count'),
+        'Market mood section': getRadio('mood'),
+        'Delivery times': getChecked('delivery').join(', ') || '(none)',
+        'Timezone': getRadio('timezone'),
+        'Weekends': getRadio('weekends'),
+        'Breaking alerts': getRadio('alerts'),
+        'Blacklist': getVal('blacklist'),
+        'Must include': getVal('must-include'),
+        'Other notes': getVal('other'),
+      };
+
+      let output = 'STOCK NEWS BOT - CONFIGURATION\n';
+      output += '='.repeat(40) + '\n\n';
+      for (const [key, val] of Object.entries(answers)) {
+        output += `${key}: ${val}\n`;
+      }
+      output += '\n' + '='.repeat(40) + '\n';
+      output += 'Generated: ' + new Date().toLocaleDateString() + '\n';
+
+      document.getElementById('output').textContent = output;
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+      // Also log as JSON for easy parsing
+      console.log(JSON.stringify(answers, null, 2));
+    });
+
+    document.getElementById('copy-btn').addEventListener('click', function() {
+      const text = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(text);
+      this.textContent = 'Copied!';
+      this.classList.add('copied');
+      setTimeout(() => {
+        this.textContent = 'Copy to clipboard';
+        this.classList.remove('copied');
+      }, 2000);
+    });
+
+    document.getElementById('text-btn').addEventListener('click', function() {
+      const text = document.getElementById('output').textContent;
+      window.open('sms:&body=' + encodeURIComponent(text));
+    });
+
+    document.getElementById('email-btn').addEventListener('click', function() {
+      const text = document.getElementById('output').textContent;
+      window.open('mailto:?subject=' + encodeURIComponent('Stock News Bot Setup') + '&body=' + encodeURIComponent(text));
+    });
+  </script>
+</body>
+</html>

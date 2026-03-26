@@ -36,26 +36,62 @@ export function isWatchlistMatch(article, config) {
 }
 
 export function deduplicateNews(articles) {
-  const seen = new Map();
+  const kept = [];
 
   for (const article of articles) {
-    // Use headline similarity as dedup key
-    const key = normalizeHeadline(article.headline);
-    const existing = seen.get(key);
-
-    if (!existing || article.score > existing.score) {
-      seen.set(key, article);
+    const isDupe = kept.some(existing => isSameStory(article, existing));
+    if (!isDupe) {
+      kept.push(article);
     }
   }
 
-  return [...seen.values()];
+  return kept;
 }
 
-function normalizeHeadline(headline) {
-  return headline
+function isSameStory(a, b) {
+  // Same ticker + high keyword overlap = same story
+  if (a.ticker && b.ticker && a.ticker === b.ticker) {
+    const overlapScore = keywordOverlap(a.headline, b.headline);
+    if (overlapScore >= 0.4) return true;
+  }
+
+  // Even across tickers, very high overlap means same story
+  const overlapScore = keywordOverlap(a.headline, b.headline);
+  if (overlapScore >= 0.6) return true;
+
+  return false;
+}
+
+function keywordOverlap(headlineA, headlineB) {
+  const wordsA = extractKeywords(headlineA);
+  const wordsB = extractKeywords(headlineB);
+  if (!wordsA.size || !wordsB.size) return 0;
+
+  let matches = 0;
+  for (const word of wordsA) {
+    if (wordsB.has(word)) matches++;
+  }
+
+  // Jaccard-ish: matches over smaller set size
+  const smaller = Math.min(wordsA.size, wordsB.size);
+  return matches / smaller;
+}
+
+const STOP_WORDS = new Set([
+  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
+  'has', 'have', 'had', 'do', 'does', 'did', 'will', 'would',
+  'could', 'should', 'may', 'might', 'can', 'this', 'that',
+  'it', 'its', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
+  'by', 'from', 'as', 'into', 'and', 'or', 'but', 'not', 'no',
+  'up', 'out', 'if', 'about', 'than', 'just', 'over', 'after',
+  'why', 'how', 'what', 'when', 'where', 'which', 'who',
+]);
+
+function extractKeywords(headline) {
+  const words = headline
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 60); // compare first 60 chars
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+  return new Set(words);
 }

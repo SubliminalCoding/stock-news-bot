@@ -23,9 +23,10 @@ export function rankNews(articles, config) {
     return b.datetime - a.datetime;
   });
 
-  // Trim to max items
+  // Trim to max items with diversity cap per ticker
   const maxItems = config.display?.max_items || 15;
-  return scored.slice(0, maxItems);
+  const maxPerTicker = Math.max(3, Math.ceil(maxItems * 0.4));
+  return diversityTrim(scored, maxItems, maxPerTicker);
 }
 
 function calculateScore(article, config) {
@@ -63,4 +64,29 @@ function calculateScore(article, config) {
   }
 
   return score;
+}
+
+function diversityTrim(scored, maxItems, maxPerTicker) {
+  const result = [];
+  const tickerCounts = {};
+
+  for (const article of scored) {
+    if (result.length >= maxItems) break;
+
+    const ticker = article.ticker?.toUpperCase() || '__general__';
+
+    // Must-include overrides skip the cap
+    if (article.score >= 999) {
+      result.push(article);
+      tickerCounts[ticker] = (tickerCounts[ticker] || 0) + 1;
+      continue;
+    }
+
+    if ((tickerCounts[ticker] || 0) >= maxPerTicker) continue;
+
+    result.push(article);
+    tickerCounts[ticker] = (tickerCounts[ticker] || 0) + 1;
+  }
+
+  return result;
 }

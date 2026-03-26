@@ -198,7 +198,7 @@
     }
 
     /* Text inputs */
-    input[type="text"], textarea {
+    input[type="text"], input[type="email"], textarea {
       width: 100%;
       padding: 11px 14px;
       background: var(--bg-input);
@@ -210,11 +210,11 @@
       transition: border-color var(--transition), box-shadow var(--transition);
     }
 
-    input[type="text"]::placeholder, textarea::placeholder {
+    input[type="text"]::placeholder, input[type="email"]::placeholder, textarea::placeholder {
       color: var(--text-muted);
     }
 
-    input[type="text"]:focus, textarea:focus {
+    input[type="text"]:focus, input[type="email"]:focus, textarea:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-glow);
@@ -442,6 +442,55 @@
       margin-top: 16px;
     }
 
+    .back-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+      margin-top: 10px;
+    }
+
+    .back-btn:hover {
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    .validation-error {
+      color: #f87171;
+      font-size: 0.8rem;
+      margin-top: 6px;
+      display: none;
+    }
+
+    .input-error {
+      border-color: #f87171 !important;
+    }
+
+    .limit-reached {
+      background: rgba(248, 113, 113, 0.1) !important;
+      color: #f87171 !important;
+    }
+
+    .news-disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .limit-counter {
+      display: inline-block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-left: 8px;
+    }
+
     /* Responsive */
     @media (max-width: 480px) {
       .container { padding: 24px 16px 40px; }
@@ -463,6 +512,21 @@
 
     <form id="questionnaire">
 
+      <!-- Section 0: Email -->
+      <div class="section" data-section="0">
+        <div class="section-header">
+          <div class="section-number" style="background: var(--success-glow); border-color: rgba(74,222,128,0.2); color: var(--success);">!</div>
+          <h2>First, where should we send your briefing?</h2>
+        </div>
+
+        <div class="question">
+          <label class="main" for="email">Your email address</label>
+          <p class="hint">This is where your daily briefing will be delivered.</p>
+          <input type="email" id="email" name="email" placeholder="dad@email.com">
+          <p class="validation-error" id="email-error">Please enter your email so we know where to send your briefing.</p>
+        </div>
+      </div>
+
       <!-- Section 1 -->
       <div class="section" data-section="1">
         <div class="section-header">
@@ -474,6 +538,7 @@
           <label class="main" for="tickers">Your tickers</label>
           <p class="hint">Stocks, ETFs, or other symbols you want to track (up to 30). Separate with commas.</p>
           <input type="text" id="tickers" name="tickers" placeholder="AAPL, NVDA, TSLA, SPY, QQQ, AMZN">
+          <p class="validation-error" id="tickers-error">Enter at least one ticker so we know what to track for you.</p>
         </div>
 
         <div class="question">
@@ -541,7 +606,7 @@
 
         <div class="question">
           <label class="main">Top news types</label>
-          <span class="limit-hint">Pick up to 3</span>
+          <span class="limit-hint" id="news-limit">Pick up to 3</span><span class="limit-counter" id="news-counter">0/3 selected</span>
           <div class="checkbox-group" id="news-types">
             <label><input type="checkbox" name="news" value="Earnings reports"><span>Earnings reports</span></label>
             <label><input type="checkbox" name="news" value="Economic data"><span>Economic data (jobs, inflation, GDP)</span></label>
@@ -679,72 +744,144 @@
         <pre id="output"></pre>
       </div>
       <button class="copy-btn" id="copy-btn">Copy to clipboard</button>
+      <button class="back-btn" id="back-btn">Back to edit my answers</button>
       <p class="results-hint">After copying, paste it into a text message or email to Matt.</p>
     </div>
   </div>
 
   <script>
-    // Progress bar tracking
     const form = document.getElementById('questionnaire');
     const progress = document.getElementById('progress');
     const sections = form.querySelectorAll('.section');
     const totalSections = sections.length;
+    const touchedSections = new Set();
+
+    // Track which sections the user has actually interacted with
+    sections.forEach(section => {
+      section.addEventListener('input', () => touchedSections.add(section.dataset.section));
+      section.addEventListener('change', () => touchedSections.add(section.dataset.section));
+    });
 
     function updateProgress() {
-      let filled = 0;
-      sections.forEach(section => {
-        const inputs = section.querySelectorAll('input[type="text"], textarea');
-        const checks = section.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked');
-        if (inputs.length && [...inputs].some(i => i.value.trim()) || checks.length) filled++;
-      });
-      progress.style.width = Math.round((filled / totalSections) * 100) + '%';
+      progress.style.width = Math.round((touchedSections.size / totalSections) * 100) + '%';
     }
 
     form.addEventListener('input', updateProgress);
     form.addEventListener('change', updateProgress);
 
-    // Limit news type checkboxes to 3
+    // --- Fix #5: "US stocks only" mutual exclusion ---
+    const assetBoxes = document.querySelectorAll('input[name="assets"]');
+    assetBoxes.forEach(box => {
+      box.addEventListener('change', () => {
+        if (box.value === 'US stocks only' && box.checked) {
+          assetBoxes.forEach(other => { if (other !== box) other.checked = false; });
+        } else if (box.value !== 'US stocks only' && box.checked) {
+          const usOnly = document.querySelector('input[name="assets"][value="US stocks only"]');
+          if (usOnly) usOnly.checked = false;
+        }
+      });
+    });
+
+    // --- Fix #4: News checkbox limit with visual feedback ---
     const newsBoxes = document.querySelectorAll('#news-types input[type="checkbox"]');
+    const newsLimit = document.getElementById('news-limit');
+    const newsCounter = document.getElementById('news-counter');
+
+    function updateNewsState() {
+      const checked = document.querySelectorAll('#news-types input:checked');
+      const count = checked.length;
+      newsCounter.textContent = count + '/3 selected';
+
+      if (count >= 3) {
+        newsLimit.classList.add('limit-reached');
+        newsBoxes.forEach(box => {
+          if (!box.checked) box.closest('label').classList.add('news-disabled');
+        });
+      } else {
+        newsLimit.classList.remove('limit-reached');
+        newsBoxes.forEach(box => box.closest('label').classList.remove('news-disabled'));
+      }
+    }
+
     newsBoxes.forEach(box => {
       box.addEventListener('change', () => {
         const checked = document.querySelectorAll('#news-types input:checked');
         if (checked.length > 3) {
           box.checked = false;
         }
+        updateNewsState();
       });
     });
 
-    // Show results on submit
+    // --- Fix #3: Validation on submit ---
+    function clearError(id) {
+      document.getElementById(id).style.display = 'none';
+      document.getElementById(id.replace('-error', '')).classList.remove('input-error');
+    }
+
+    document.getElementById('email').addEventListener('input', () => clearError('email-error'));
+    document.getElementById('tickers').addEventListener('input', () => clearError('tickers-error'));
+
+    // --- Submit handler with validation ---
     form.addEventListener('submit', (e) => {
       e.preventDefault();
+
+      // Validate required fields
+      const email = document.getElementById('email').value.trim();
+      const tickers = document.getElementById('tickers').value.trim();
+      let hasError = false;
+
+      if (!email) {
+        document.getElementById('email-error').style.display = 'block';
+        document.getElementById('email').classList.add('input-error');
+        if (!hasError) document.getElementById('email').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        hasError = true;
+      }
+
+      if (!tickers) {
+        document.getElementById('tickers-error').style.display = 'block';
+        document.getElementById('tickers').classList.add('input-error');
+        if (!hasError) document.getElementById('tickers').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        hasError = true;
+      }
+
+      if (hasError) return;
 
       const getChecked = (name) =>
         [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
       const getRadio = (name) => {
         const el = document.querySelector(`input[name="${name}"]:checked`);
-        return el ? el.value : '—';
+        return el ? el.value : '(not set)';
       };
-      const getVal = (id) => document.getElementById(id).value.trim() || '—';
+      const getVal = (id) => document.getElementById(id).value.trim() || '(none)';
+
+      // Fix #8: Add timestamp
+      const now = new Date();
+      const timestamp = now.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
 
       const lines = [
         'STOCK NEWS BOT - MY PREFERENCES',
         '================================',
         '',
-        'Tickers: ' + getVal('tickers'),
-        'Sectors: ' + (getChecked('sectors').join(', ') || '—'),
-        'Other assets: ' + (getChecked('assets').join(', ') || '—'),
+        'Email: ' + email,
+        'Tickers: ' + tickers,
+        'Sectors: ' + (getChecked('sectors').join(', ') || '(none)'),
+        'Other assets: ' + (getChecked('assets').join(', ') || '(none)'),
         '',
         'Trading style: ' + getRadio('style'),
         'Market events: ' + getRadio('events'),
         '',
-        'Top news types: ' + (getChecked('news').join(', ') || '—'),
+        'Top news types: ' + (getChecked('news').join(', ') || '(none)'),
         'Exclude: ' + getVal('exclude-topics'),
         '',
         'Detail level: ' + getRadio('detail'),
         'Items per email: ' + getRadio('count'),
         'Market mood: ' + getRadio('mood'),
         '',
-        'Delivery times: ' + (getChecked('delivery').join(', ') || '—'),
+        'Delivery times: ' + (getChecked('delivery').join(', ') || '(none)'),
         'Timezone: ' + getRadio('timezone'),
         'Weekends: ' + getRadio('weekends'),
         'Breaking alerts: ' + getRadio('alerts'),
@@ -753,6 +890,7 @@
         'Always include: ' + getVal('must-include'),
         'Other notes: ' + getVal('other'),
         '',
+        'Submitted: ' + timestamp,
         '================================',
       ];
 
@@ -763,20 +901,58 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // Copy button
+    // --- Fix #1: Clipboard with fallback ---
     document.getElementById('copy-btn').addEventListener('click', function() {
       const text = document.getElementById('output').textContent;
-      navigator.clipboard.writeText(text);
-      this.textContent = 'Copied!';
-      this.classList.add('copied');
-      setTimeout(() => {
-        this.textContent = 'Copy to clipboard';
-        this.classList.remove('copied');
-      }, 2000);
+      const btn = this;
+
+      function showCopied() {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy to clipboard';
+          btn.classList.remove('copied');
+        }, 2500);
+      }
+
+      function fallbackCopy() {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          showCopied();
+        } catch (err) {
+          // Last resort: select the text in the pre block so user can manually copy
+          const range = document.createRange();
+          range.selectNodeContents(document.getElementById('output'));
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Text selected - now copy it manually';
+          setTimeout(() => { btn.textContent = 'Copy to clipboard'; }, 4000);
+        }
+        document.body.removeChild(textarea);
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showCopied).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
     });
 
-    // Init progress for pre-checked defaults
-    updateProgress();
+    // --- Fix #7: Back to edit button ---
+    document.getElementById('back-btn').addEventListener('click', function() {
+      document.getElementById('results').style.display = 'none';
+      form.style.display = 'block';
+      document.querySelector('.progress-bar').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   </script>
 </body>
 </html>

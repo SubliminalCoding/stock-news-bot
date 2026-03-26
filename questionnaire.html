@@ -122,42 +122,38 @@
     .submit-btn:hover {
       background: #7dd3fc;
     }
-    .results {
+    .success {
       display: none;
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 24px;
-      margin-top: 20px;
+      text-align: center;
+      padding: 60px 24px;
     }
-    .results h2 {
-      color: #4ade80;
-      margin-bottom: 12px;
-    }
-    .results pre {
-      background: #0f172a;
-      padding: 16px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      font-size: 0.85rem;
-      color: #cbd5e1;
-      max-height: 500px;
-      overflow-y: auto;
-    }
-    .copy-btn {
-      margin-top: 12px;
-      padding: 10px 20px;
+    .success .checkmark {
+      width: 80px;
+      height: 80px;
       background: #4ade80;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 40px;
       color: #0f172a;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.95rem;
     }
-    .copy-btn:hover { background: #86efac; }
-    .copied { background: #22c55e; }
-    .divider { height: 1px; background: #334155; margin: 20px 0; }
+    .success h2 {
+      color: #f8fafc;
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+    .success p {
+      color: #94a3b8;
+      font-size: 1rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .submit-btn:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -167,7 +163,7 @@
 
     <form id="questionnaire" name="stock-news-questionnaire" method="POST" data-netlify="true" netlify-honeypot="bot-field">
       <input type="hidden" name="form-name" value="stock-news-questionnaire">
-      <p style="display:none"><label>Don't fill this out: <input name="bot-field"></label></p
+      <p style="display:none"><label>Don't fill this out: <input name="bot-field"></label></p>
 
       <!-- Section 1 -->
       <div class="section">
@@ -176,7 +172,7 @@
         <div class="question">
           <label class="main" for="tickers">What are your tickers?</label>
           <p class="hint">List the stocks, ETFs, or other symbols you want to track (up to 30). Separate with commas.</p>
-          <input type="text" id="tickers" placeholder="e.g. AAPL, NVDA, TSLA, SPY, QQQ, AMZN">
+          <input type="text" id="tickers" name="tickers" placeholder="e.g. AAPL, NVDA, TSLA, SPY, QQQ, AMZN">
         </div>
 
         <div class="question">
@@ -251,7 +247,7 @@
 
         <div class="question">
           <label class="main" for="exclude-topics">Anything you definitely don't want to see?</label>
-          <input type="text" id="exclude-topics" placeholder="e.g. penny stocks, crypto spam, meme stock hype">
+          <input type="text" id="exclude-topics" name="exclude-topics" placeholder="e.g. penny stocks, crypto spam, meme stock hype">
         </div>
       </div>
 
@@ -336,32 +332,27 @@
 
         <div class="question">
           <label class="main" for="blacklist">Any tickers or topics to always exclude?</label>
-          <input type="text" id="blacklist" placeholder="e.g. DWAC, penny stocks under $1">
+          <input type="text" id="blacklist" name="blacklist" placeholder="e.g. DWAC, penny stocks under $1">
         </div>
 
         <div class="question">
           <label class="main" for="must-include">Anything that should always be included no matter what?</label>
-          <input type="text" id="must-include" placeholder="e.g. any Fed announcement, any stock halt">
+          <input type="text" id="must-include" name="must-include" placeholder="e.g. any Fed announcement, any stock halt">
         </div>
 
         <div class="question">
           <label class="main" for="other">Any other preferences or special requests?</label>
-          <textarea id="other" placeholder="Write anything here"></textarea>
+          <textarea id="other" name="other" placeholder="Write anything here"></textarea>
         </div>
       </div>
 
       <button type="submit" class="submit-btn">Submit</button>
     </form>
 
-    <div class="results" id="results">
-      <h2>All set!</h2>
-      <p style="color: #94a3b8; margin-bottom: 12px;">Copy your answers below and text or email them to Matt. You can use the buttons underneath.</p>
-      <pre id="output"></pre>
-      <button class="copy-btn" id="copy-btn">Copy to clipboard</button>
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="copy-btn" id="text-btn" style="background: #38bdf8; flex: 1;">Text it</button>
-        <button class="copy-btn" id="email-btn" style="background: #a78bfa; flex: 1;">Email it</button>
-      </div>
+    <div class="success" id="success">
+      <div class="checkmark">&#10003;</div>
+      <h2>You're all set!</h2>
+      <p>Your answers have been sent to Matt. He'll use these to set up your personalized daily stock briefing. You can close this page.</p>
     </div>
   </div>
 
@@ -377,72 +368,29 @@
       });
     });
 
+    // Submit to Netlify via fetch, then show success screen
     document.getElementById('questionnaire').addEventListener('submit', (e) => {
       e.preventDefault();
+      const form = e.target;
+      const btn = form.querySelector('.submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
 
-      const getChecked = (name) =>
-        [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
-      const getRadio = (name) => {
-        const el = document.querySelector(`input[name="${name}"]:checked`);
-        return el ? el.value : '(not answered)';
-      };
-      const getVal = (id) => document.getElementById(id).value.trim() || '(none)';
-
-      const answers = {
-        'Tickers': getVal('tickers'),
-        'Sectors': getChecked('sectors').join(', ') || '(none)',
-        'Other asset types': getChecked('assets').join(', ') || '(none)',
-        'Trading style': getRadio('style'),
-        'Follows market events': getRadio('events'),
-        'Top news types': getChecked('news').join(', ') || '(none)',
-        'Exclude topics': getVal('exclude-topics'),
-        'Detail level': getRadio('detail'),
-        'Items per email': getRadio('count'),
-        'Market mood section': getRadio('mood'),
-        'Delivery times': getChecked('delivery').join(', ') || '(none)',
-        'Timezone': getRadio('timezone'),
-        'Weekends': getRadio('weekends'),
-        'Breaking alerts': getRadio('alerts'),
-        'Blacklist': getVal('blacklist'),
-        'Must include': getVal('must-include'),
-        'Other notes': getVal('other'),
-      };
-
-      let output = 'STOCK NEWS BOT - CONFIGURATION\n';
-      output += '='.repeat(40) + '\n\n';
-      for (const [key, val] of Object.entries(answers)) {
-        output += `${key}: ${val}\n`;
-      }
-      output += '\n' + '='.repeat(40) + '\n';
-      output += 'Generated: ' + new Date().toLocaleDateString() + '\n';
-
-      document.getElementById('output').textContent = output;
-      document.getElementById('results').style.display = 'block';
-      document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
-
-      // Also log as JSON for easy parsing
-      console.log(JSON.stringify(answers, null, 2));
-    });
-
-    document.getElementById('copy-btn').addEventListener('click', function() {
-      const text = document.getElementById('output').textContent;
-      navigator.clipboard.writeText(text);
-      this.textContent = 'Copied!';
-      this.classList.add('copied');
-      setTimeout(() => {
-        this.textContent = 'Copy to clipboard';
-        this.classList.remove('copied');
-      }, 2000);
-    });
-
-    document.getElementById('text-btn').addEventListener('click', function() {
-      const text = document.getElementById('output').textContent;
-      window.open('sms:&body=' + encodeURIComponent(text));
-    });
-
-    document.getElementById('email-btn').addEventListener('click', function() {
-      const text = document.getElementById('output').textContent;
-      window.open('mailto:?subject=' + encodeURIComponent('Stock News Bot Setup') + '&body=' + encodeURIComponent(text));
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(new FormData(form)).toString()
+      })
+      .then(() => {
+        form.style.display = 'none';
+        document.getElementById('success').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Submit';
+        alert('Something went wrong. Check your connection and try again.');
+      });
     });
   </script>
 </body>

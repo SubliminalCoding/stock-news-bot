@@ -46,7 +46,9 @@ async function summarizeWithClaude(articles, config) {
 
 Summarize each article below in 2-3 sentences. Focus on what matters to a trader: price impact, catalysts, and what to watch next. Be concise and direct. No fluff.
 
-Return your summaries numbered to match the articles.
+Return ONLY your summaries, one per line, prefixed with the article number and a pipe character. Example format:
+1| Summary of first article here.
+2| Summary of second article here.
 
 ${batch}`
     }],
@@ -62,12 +64,19 @@ ${batch}`
 }
 
 function parseSummaries(text, count) {
-  const summaries = [];
-  for (let i = 1; i <= count; i++) {
-    const pattern = new RegExp(`\\[?${i}\\]?[.:\\s]+(.+?)(?=\\[?${i + 1}\\]?[.:\\s]|$)`, 's');
-    const match = text.match(pattern);
-    summaries.push(match ? match[1].trim() : null);
+  const summaries = new Array(count).fill(null);
+  const lines = text.split('\n').filter(l => l.trim());
+
+  for (const line of lines) {
+    const match = line.match(/^(\d+)\s*\|\s*(.+)/);
+    if (match) {
+      const idx = parseInt(match[1], 10) - 1;
+      if (idx >= 0 && idx < count) {
+        summaries[idx] = match[2].trim();
+      }
+    }
   }
+
   return summaries;
 }
 

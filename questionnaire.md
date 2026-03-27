@@ -114,9 +114,9 @@ Your responses configure the bot automatically:
 |---|---|
 | Tickers (1.1) | Priority watchlist — any mention gets surfaced |
 | Sectors (1.2) | Filters non-watchlist stories by sector |
-| Asset types (1.3) | Activates relevant data feeds |
+| Asset types (1.3) | Reserved for future multi-asset support (US stocks only for now) |
 | Trading style (2.1) | How far ahead the system looks for catalysts |
-| Events (2.2) | Auto-highlights earnings dates, FOMC, etc. |
+| Events (2.2) | Boosts ranking of earnings, FOMC, and event-related articles |
 | Top 3 news types (3.1) | Priority weighting — top picks get more space |
 | Exclusions (3.2) | Hard filter, dropped before ranking |
 | Detail level (4.1) | Controls summary length per item |
@@ -125,9 +125,6 @@ Your responses configure the bot automatically:
 | Blacklist/must-include (6.1-6.2) | Override rules applied after all scoring |
 
 **Sensible defaults applied automatically:**
-- Non-watchlist stocks need a 5%+ move to appear
-- Earnings surprises need 10%+ beat/miss for non-watchlist names
 - All watchlist ticker events are included regardless of magnitude
 - Duplicate stories are merged into one item
-- Opinion content included only from major analysts, labeled clearly
 - Sources weighted toward SEC filings, Bloomberg/Reuters, WSJ, company press releases

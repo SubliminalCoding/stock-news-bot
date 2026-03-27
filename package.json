@@ -7,7 +7,8 @@
     "briefing": "node src/index.js",
     "briefing:user": "node src/index.js --user",
     "test:fetch": "node src/fetch/finnhub.js",
-    "test:send": "node src/send.js"
+    "test:send": "node src/send.js",
+    "test": "node --test src/*.test.js"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

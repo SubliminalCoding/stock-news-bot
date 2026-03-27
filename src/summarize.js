@@ -65,7 +65,7 @@ ${batch}`
   }));
 }
 
-function parseSummaries(text, count) {
+export function parseSummaries(text, count) {
   const summaries = new Array(count).fill(null);
   const lines = text.split('\n').filter(l => l.trim());
 
@@ -82,7 +82,7 @@ function parseSummaries(text, count) {
   return summaries;
 }
 
-function truncateToSentences(text, count) {
+export function truncateToSentences(text, count) {
   if (!text) return null;
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
   return sentences.slice(0, count).join(' ').trim();

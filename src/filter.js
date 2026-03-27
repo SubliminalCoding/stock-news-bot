@@ -1,3 +1,16 @@
+const SECTOR_KEYWORDS = {
+  'Technology': ['tech', 'software', 'cloud', 'saas', 'app', 'digital'],
+  'Semiconductors': ['chip', 'semiconductor', 'wafer', 'fab', 'processor', 'gpu', 'cpu'],
+  'Financials': ['bank', 'financial', 'lending', 'mortgage', 'insurance', 'credit'],
+  'Energy': ['oil', 'gas', 'energy', 'drilling', 'petroleum', 'crude', 'pipeline'],
+  'Healthcare/Biotech': ['pharma', 'biotech', 'drug', 'fda', 'clinical', 'hospital', 'health'],
+  'Consumer': ['retail', 'consumer', 'brand', 'store', 'ecommerce', 'apparel'],
+  'Industrials': ['manufacturing', 'industrial', 'factory', 'logistics', 'supply chain'],
+  'Real Estate': ['reit', 'real estate', 'property', 'housing', 'mortgage'],
+  'Defense': ['defense', 'military', 'pentagon', 'aerospace', 'contractor'],
+  'EV/Clean Energy': ['ev', 'electric vehicle', 'solar', 'wind', 'renewable', 'battery', 'charging'],
+};
+
 export function filterNews(articles, config) {
   const maxAgeHours = 20;
   const cutoff = Date.now() - (maxAgeHours * 60 * 60 * 1000);
@@ -24,8 +37,13 @@ export function filterNews(articles, config) {
     // Sector filter for non-watchlist stories
     if (!isWatchlistMatch(article, config)) {
       if (config.sectors?.length && article.type === 'company_news') {
-        // Non-watchlist company news must match a sector or have high relevance
-        // We'll be generous here since sector tagging from Finnhub is limited
+        const text = `${article.headline} ${article.summary}`.toLowerCase();
+        const matched = config.sectors.some(sector => {
+          const keywords = SECTOR_KEYWORDS[sector];
+          if (!keywords) return false;
+          return keywords.some(kw => text.includes(kw));
+        });
+        if (!matched) return false;
       }
     }
 

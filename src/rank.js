@@ -48,6 +48,18 @@ function calculateScore(article, config) {
     }
   }
 
+  // Events attention boost (earnings, FOMC, etc.)
+  const eventsAttention = config.events_attention || 'medium';
+  if (eventsAttention !== 'low') {
+    const eventKeywords = [
+      ...(CATEGORY_MAP['earnings'] || []),
+      ...(CATEGORY_MAP['fed_rates'] || []),
+    ];
+    if (eventKeywords.some(kw => text.includes(kw))) {
+      score += eventsAttention === 'high' ? 3 : 1;
+    }
+  }
+
   // Recency bonus
   const ageHours = (Date.now() - article.datetime) / (1000 * 60 * 60);
   if (ageHours < 4) score += 3;
@@ -90,7 +102,7 @@ function getSourceTier(sourceMedia) {
   return 0;
 }
 
-function diversityTrim(scored, maxItems, maxPerTicker) {
+export function diversityTrim(scored, maxItems, maxPerTicker) {
   const result = [];
   const tickerCounts = {};
 

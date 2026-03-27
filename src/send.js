@@ -16,7 +16,7 @@ export async function sendBriefing(config, { html, text }) {
   });
 
   const { data, error } = await getResend().emails.send({
-    from: process.env.RESEND_FROM || 'Stock News Bot <briefing@redwooddigitalfrederick.com>',
+    from: process.env.RESEND_FROM || 'Stock News Bot <onboarding@resend.dev>',
     to: config.email,
     subject: `Your Market Briefing - ${dateStr}`,
     html,

@@ -1,0 +1,29 @@
+{
+  "name": "Joseph",
+  "email": "koalokangaroo22@gmail.com",
+  "schedule": {
+    "times": ["06:00", "09:30"],
+    "timezone": "America/New_York",
+    "weekends": false,
+    "weekly_recap": false
+  },
+  "watchlist": ["AAPL", "TSLA", "NVDA", "QQQ", "VOO", "IWM", "SLV", "GLD"],
+  "sectors": ["Technology", "Semiconductors", "Financials", "Energy"],
+  "asset_types": ["us_stocks"],
+  "trading_style": "swing",
+  "events_attention": "high",
+  "news_priorities": ["earnings", "economic_data", "fed_rates"],
+  "exclusions": {
+    "tickers": [],
+    "topics": []
+  },
+  "must_include": [],
+  "display": {
+    "detail_level": "paragraph",
+    "max_items": 15,
+    "market_mood": true
+  },
+  "alerts": {
+    "breaking_news": false
+  }
+}

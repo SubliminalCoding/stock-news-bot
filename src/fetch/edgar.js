@@ -1,5 +1,4 @@
-const BASE_URL = 'https://efts.sec.gov/LATEST/search-index';
-const FILINGS_URL = 'https://www.sec.gov/cgi-bin/browse-edgar';
+const SEARCH_URL = 'https://efts.sec.gov/LATEST/search-index';
 
 const HEADERS = {
   'User-Agent': 'DadStocks Bot matt@redwooddigitalfrederick.com',
@@ -8,7 +7,7 @@ const HEADERS = {
 
 export async function fetchRecentFilings(ticker) {
   try {
-    const url = new URL('https://efts.sec.gov/LATEST/search-index');
+    const url = new URL(SEARCH_URL);
     url.searchParams.set('q', `"${ticker}"`);
     url.searchParams.set('dateRange', 'custom');
 
@@ -25,19 +24,26 @@ export async function fetchRecentFilings(ticker) {
 
     return data.hits.hits.slice(0, 5).map(hit => {
       const src = hit._source || {};
+      // Build a proper EDGAR filing URL from accession number
+      const accession = src.accession_no?.replace(/-/g, '') || '';
+      const cik = src.entity_id || '';
+      const filingUrl = accession && cik
+        ? `https://www.sec.gov/Archives/edgar/data/${cik}/${accession}`
+        : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=${ticker}&type=&dateb=&owner=include&count=10&search_text=&action=getcompany`;
+
       return {
         source: 'edgar',
         type: 'sec_filing',
         ticker: ticker,
         headline: `SEC Filing: ${src.form_type || 'Unknown'} - ${src.entity_name || ticker}`,
         summary: src.file_description || `${src.form_type} filing for ${src.entity_name || ticker}`,
-        url: `https://www.sec.gov/Archives/edgar/data/${src.entity_id}/${src.file_num}`,
-        datetime: new Date(src.file_date || Date.now()),
+        url: filingUrl,
+        datetime: src.file_date ? new Date(src.file_date) : null,
         category: 'sec_filing',
         sourceMedia: 'SEC EDGAR',
         formType: src.form_type,
       };
-    });
+    }).filter(f => f.datetime); // Drop filings with no date to avoid false recency
   } catch (err) {
     console.error(`  EDGAR failed for ${ticker}:`, err.message);
     return [];
@@ -47,7 +53,6 @@ export async function fetchRecentFilings(ticker) {
 export async function fetchFilingsForWatchlist(watchlist) {
   const results = [];
 
-  // SEC has rate limits, fetch sequentially with small delay
   for (const ticker of watchlist) {
     const filings = await fetchRecentFilings(ticker);
     results.push(...filings);

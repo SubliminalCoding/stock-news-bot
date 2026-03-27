@@ -22,9 +22,10 @@ export function formatBriefing(articles, config, quotes = []) {
   }).format(now));
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Group articles
-  const watchlistItems = articles.filter(a => a.ticker && config.watchlist.includes(a.ticker.toUpperCase()));
-  const otherItems = articles.filter(a => !a.ticker || !config.watchlist.includes(a.ticker.toUpperCase()));
+  // Group articles (case-insensitive watchlist matching)
+  const watchlistUpper = config.watchlist.map(t => t.toUpperCase());
+  const watchlistItems = articles.filter(a => a.ticker && watchlistUpper.includes(a.ticker.toUpperCase()));
+  const otherItems = articles.filter(a => !a.ticker || !watchlistUpper.includes(a.ticker.toUpperCase()));
 
   let html = emailWrapper(`
     ${headerSection(name, dateStr, timeStr, greeting)}
@@ -107,10 +108,10 @@ function newsSection(title, articles, config) {
       <div style="padding:14px 0;border-bottom:1px solid #1e293b;">
         <div>
           ${tickerBadge}
-          <span style="color:#64748b;font-size:11px;">${timeAgo} &middot; ${article.sourceMedia || 'News'}</span>
+          <span style="color:#64748b;font-size:11px;">${timeAgo} &middot; ${escapeHtml(article.sourceMedia) || 'News'}</span>
         </div>
-        <a href="${article.url}" style="color:#f1f5f9;font-size:14px;font-weight:500;text-decoration:none;line-height:1.4;display:block;margin-top:6px;">
-          ${article.headline}
+        <a href="${escapeHtml(article.url)}" style="color:#f1f5f9;font-size:14px;font-weight:500;text-decoration:none;line-height:1.4;display:block;margin-top:6px;">
+          ${escapeHtml(article.headline)}
         </a>
         ${bodyHtml}
       </div>`;
@@ -131,11 +132,17 @@ function footerSection() {
 }
 
 function getTimeAgo(date) {
+  if (!date) return 'Recent';
   const hours = Math.floor((Date.now() - date) / (1000 * 60 * 60));
   if (hours < 1) return 'Just now';
   if (hours === 1) return '1h ago';
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function formatPlainText(articles, config, dateStr, quotes) {

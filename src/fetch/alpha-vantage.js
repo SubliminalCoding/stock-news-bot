@@ -73,7 +73,7 @@ export async function fetchNewsSentiment(tickers) {
       headline: item.title,
       summary: item.summary,
       url: item.url,
-      datetime: new Date(item.time_published?.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, '$1-$2-$3T$4:$5:$6')),
+      datetime: new Date(item.time_published?.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, '$1-$2-$3T$4:$5:$6Z')),
       category: item.topics?.[0]?.topic || 'general',
       sourceMedia: item.source,
       sentimentScore: parseFloat(item.overall_sentiment_score),

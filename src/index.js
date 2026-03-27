@@ -15,7 +15,10 @@ async function runForUser(config) {
   // 1. Fetch news from all sources in parallel
   console.log(`  Fetching news for ${config.watchlist.length} tickers...`);
   const [finnhubArticles, avArticles, edgarFilings] = await Promise.all([
-    fetchAllNews(config.watchlist),
+    fetchAllNews(config.watchlist).catch(err => {
+      console.error('  Finnhub fetch failed:', err.message);
+      return [];
+    }),
     fetchNewsSentiment(config.watchlist).catch(err => {
       console.error('  Alpha Vantage fetch failed:', err.message);
       return [];

@@ -26,8 +26,8 @@ jobs:
 
       - name: Run briefing
         run: |
-          if [ -n "${{ inputs.user }}" ]; then
-            node src/index.js --user "${{ inputs.user }}"
+          if [ -n "$USER_INPUT" ]; then
+            node src/index.js --user "$USER_INPUT"
           else
             node src/index.js --schedule-match
           fi
@@ -35,12 +35,13 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          USER_INPUT: ${{ inputs.user }}
 
       - name: Notify on failure
         if: failure()
         run: |
-          node -e "
-            const {Resend} = await import('resend');
+          node --input-type=module -e "
+            import {Resend} from 'resend';
             const r = new Resend(process.env.RESEND_API_KEY);
             await r.emails.send({
               from: process.env.RESEND_FROM || 'Stock News Bot <briefing@redwooddigitalfrederick.com>',
@@ -52,3 +53,4 @@ jobs:
           "
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          USER_INPUT: ${{ inputs.user }}

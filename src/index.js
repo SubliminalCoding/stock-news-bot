@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { loadConfig, loadAllConfigs, shouldRunNow } from './utils/config.js';
 import { fetchAllNews, fetchQuote } from './fetch/finnhub.js';
+import { fetchNewsSentiment } from './fetch/alpha-vantage.js';
+import { fetchFilingsForWatchlist } from './fetch/edgar.js';
 import { filterNews, deduplicateNews } from './filter.js';
 import { rankNews } from './rank.js';
 import { summarizeArticles } from './summarize.js';
@@ -10,10 +12,21 @@ import { sendBriefing } from './send.js';
 async function runForUser(config) {
   console.log(`\nRunning briefing for ${config.name}...`);
 
-  // 1. Fetch news
+  // 1. Fetch news from all sources in parallel
   console.log(`  Fetching news for ${config.watchlist.length} tickers...`);
-  const articles = await fetchAllNews(config.watchlist);
-  console.log(`  Got ${articles.length} raw articles`);
+  const [finnhubArticles, avArticles, edgarFilings] = await Promise.all([
+    fetchAllNews(config.watchlist),
+    fetchNewsSentiment(config.watchlist).catch(err => {
+      console.error('  Alpha Vantage fetch failed:', err.message);
+      return [];
+    }),
+    fetchFilingsForWatchlist(config.watchlist).catch(err => {
+      console.error('  EDGAR fetch failed:', err.message);
+      return [];
+    }),
+  ]);
+  const articles = [...finnhubArticles, ...avArticles, ...edgarFilings];
+  console.log(`  Got ${articles.length} raw articles (Finnhub: ${finnhubArticles.length}, AV: ${avArticles.length}, EDGAR: ${edgarFilings.length})`);
 
   // 2. Filter
   const filtered = filterNews(articles, config);

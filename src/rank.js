@@ -53,6 +53,9 @@ function calculateScore(article, config) {
   if (ageHours < 4) score += 3;
   else if (ageHours < 12) score += 1;
 
+  // Source quality weighting
+  score += getSourceTier(article.sourceMedia);
+
   // Must-include override
   if (config.must_include?.length) {
     for (const rule of config.must_include) {
@@ -64,6 +67,27 @@ function calculateScore(article, config) {
   }
 
   return score;
+}
+
+const SOURCE_TIERS = {
+  // Tier 1: +3
+  'reuters': 3, 'bloomberg': 3, 'wsj': 3, 'wall street journal': 3,
+  'sec': 3, 'edgar': 3, 'pr newswire': 2, 'globe newswire': 2,
+  'business wire': 2,
+  // Tier 2: +1
+  'cnbc': 1, 'marketwatch': 1, 'barrons': 1, "barron's": 1,
+  'financial times': 1, 'ft': 1, 'yahoo finance': 1, 'benzinga': 1,
+  'seeking alpha': 1, 'the motley fool': 1, 'investors.com': 1,
+  "investor's business daily": 1,
+};
+
+function getSourceTier(sourceMedia) {
+  if (!sourceMedia) return 0;
+  const name = sourceMedia.toLowerCase();
+  for (const [key, tier] of Object.entries(SOURCE_TIERS)) {
+    if (name.includes(key)) return tier;
+  }
+  return 0;
 }
 
 function diversityTrim(scored, maxItems, maxPerTicker) {

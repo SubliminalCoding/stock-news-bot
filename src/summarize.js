@@ -36,15 +36,17 @@ async function summarizeWithClaude(articles, config) {
   ).join('\n\n');
 
   const tradingStyle = config.trading_style || 'general';
+  const watchlist = config.watchlist?.join(', ') || '';
+  const priorities = config.news_priorities?.join(', ') || '';
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 2000,
     messages: [{
       role: 'user',
-      content: `You are a stock market news summarizer. The reader is a ${tradingStyle} trader.
+      content: `You are a stock market news summarizer. The reader is a ${tradingStyle} trader who holds: ${watchlist}. Their top priorities are: ${priorities}.
 
-Summarize each article below in 2-3 sentences. Focus on what matters to a trader: price impact, catalysts, and what to watch next. Be concise and direct. No fluff.
+Summarize each article below in 2-3 sentences. Focus on what matters to a trader: price impact, catalysts, and what to watch next. When an article relates to one of the reader's holdings, note the connection. Be concise and direct. No fluff.
 
 Return ONLY your summaries, one per line, prefixed with the article number and a pipe character. Example format:
 1| Summary of first article here.

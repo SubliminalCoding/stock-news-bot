@@ -15,12 +15,19 @@ export function formatBriefing(articles, config, quotes = []) {
     timeZone: config.schedule.timezone,
   });
 
+  const hour = parseInt(new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    hour12: false,
+    timeZone: config.schedule.timezone,
+  }).format(now));
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
   // Group articles
   const watchlistItems = articles.filter(a => a.ticker && config.watchlist.includes(a.ticker.toUpperCase()));
   const otherItems = articles.filter(a => !a.ticker || !config.watchlist.includes(a.ticker.toUpperCase()));
 
   let html = emailWrapper(`
-    ${headerSection(name, dateStr, timeStr)}
+    ${headerSection(name, dateStr, timeStr, greeting)}
     ${config.display?.market_mood ? marketMoodSection(quotes) : ''}
     ${watchlistItems.length ? newsSection('Your Watchlist', watchlistItems, config) : ''}
     ${otherItems.length ? newsSection('Market News', otherItems, config) : ''}
@@ -45,11 +52,11 @@ function emailWrapper(body) {
 </html>`;
 }
 
-function headerSection(name, dateStr, timeStr) {
+function headerSection(name, dateStr, timeStr, greeting = 'Good morning') {
   return `
     <div style="text-align:center;padding:24px 0 20px;">
       <div style="font-size:28px;margin-bottom:8px;">&#9889;</div>
-      <h1 style="color:#f1f5f9;font-size:20px;margin:0 0 4px;">Good morning, ${name}</h1>
+      <h1 style="color:#f1f5f9;font-size:20px;margin:0 0 4px;">${greeting}, ${name}</h1>
       <p style="color:#94a3b8;font-size:13px;margin:0;">${dateStr} at ${timeStr}</p>
     </div>
     <div style="height:1px;background:#1e293b;margin:0 0 24px;"></div>`;

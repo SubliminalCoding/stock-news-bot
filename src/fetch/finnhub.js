@@ -1,7 +1,7 @@
 const API_KEY = process.env.FINNHUB_API_KEY;
 const BASE_URL = 'https://finnhub.io/api/v1';
 
-async function finnhubFetch(endpoint, params = {}) {
+async function finnhubFetch(endpoint, params = {}, retries = 1) {
   const url = new URL(`${BASE_URL}${endpoint}`);
   url.searchParams.set('token', API_KEY);
   for (const [key, val] of Object.entries(params)) {
@@ -9,7 +9,14 @@ async function finnhubFetch(endpoint, params = {}) {
   }
 
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Finnhub ${endpoint}: ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    if (retries > 0 && (res.status === 429 || res.status >= 500)) {
+      console.log(`  Finnhub ${endpoint} returned ${res.status}, retrying in 1s...`);
+      await new Promise(r => setTimeout(r, 1000));
+      return finnhubFetch(endpoint, params, retries - 1);
+    }
+    throw new Error(`Finnhub ${endpoint}: ${res.status} ${res.statusText}`);
+  }
   return res.json();
 }
 

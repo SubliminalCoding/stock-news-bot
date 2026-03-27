@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { loadConfig, loadAllConfigs, shouldRunNow } from './utils/config.js';
 import { fetchAllNews, fetchQuote } from './fetch/finnhub.js';
 import { filterNews, deduplicateNews } from './filter.js';
@@ -18,27 +19,28 @@ async function runForUser(config) {
   const filtered = filterNews(articles, config);
   console.log(`  ${filtered.length} articles after filtering`);
 
-  // 3. Rank and trim
-  const ranked = rankNews(filtered, config);
-  console.log(`  Top ${ranked.length} articles after ranking`);
-
-  // 4. Deduplicate
-  const deduped = deduplicateNews(ranked);
+  // 3. Deduplicate before ranking so dupes don't waste slots
+  const deduped = deduplicateNews(filtered);
   console.log(`  ${deduped.length} articles after dedup`);
 
-  // 5. Summarize
-  const summarized = await summarizeArticles(deduped, config);
+  // 4. Rank and trim
+  const ranked = rankNews(deduped, config);
+  console.log(`  Top ${ranked.length} articles after ranking`);
 
-  // 6. Fetch quotes for watchlist (for market mood section)
-  const quotes = [];
+  // 5. Summarize
+  const summarized = await summarizeArticles(ranked, config);
+
+  // 6. Fetch quotes in parallel
+  let quotes = [];
   if (config.display?.market_mood) {
-    for (const ticker of config.watchlist.slice(0, 5)) {
-      try {
-        quotes.push(await fetchQuote(ticker));
-      } catch (err) {
-        console.error(`  Failed to fetch quote for ${ticker}:`, err.message);
-      }
-    }
+    quotes = (await Promise.all(
+      config.watchlist.slice(0, 5).map(ticker =>
+        fetchQuote(ticker).catch(err => {
+          console.error(`  Failed to fetch quote for ${ticker}:`, err.message);
+          return null;
+        })
+      )
+    )).filter(Boolean);
   }
 
   // 7. Format

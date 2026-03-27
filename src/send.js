@@ -1,6 +1,10 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend;
+function getResend() {
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY);
+  return resend;
+}
 
 export async function sendBriefing(config, { html, text }) {
   const now = new Date();
@@ -11,8 +15,8 @@ export async function sendBriefing(config, { html, text }) {
     timeZone: config.schedule.timezone,
   });
 
-  const { data, error } = await resend.emails.send({
-    from: 'Stock News Bot <briefing@dadstocks.netlify.app>',
+  const { data, error } = await getResend().emails.send({
+    from: process.env.RESEND_FROM || 'Stock News Bot <briefing@redwooddigitalfrederick.com>',
     to: config.email,
     subject: `Your Market Briefing - ${dateStr}`,
     html,

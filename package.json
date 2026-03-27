@@ -10,6 +10,7 @@
     "test:send": "node src/send.js"
   },
   "dependencies": {
+    "dotenv": "^17.3.1",
     "resend": "^4.0.0"
   },
   "optionalDependencies": {

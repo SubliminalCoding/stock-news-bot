@@ -1,5 +1,10 @@
 export function filterNews(articles, config) {
+  const maxAgeHours = 20;
+  const cutoff = Date.now() - (maxAgeHours * 60 * 60 * 1000);
+
   return articles.filter(article => {
+    // Drop stale articles (>20h old)
+    if (article.datetime && article.datetime < cutoff) return false;
     // Hard exclusion: blacklisted tickers
     if (config.exclusions?.tickers?.length) {
       const excludedTickers = config.exclusions.tickers.map(t => t.toUpperCase());

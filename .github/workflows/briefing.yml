@@ -2,8 +2,8 @@ name: Daily Briefing
 
 on:
   schedule:
-    # Runs every hour on weekdays so schedule-match can pick the right users
-    # GitHub Actions cron is UTC
+    # Runs at key times on weekdays (UTC)
+    # 10 UTC = 6 AM ET, 14 UTC = 10 AM ET, 20 UTC = 4 PM ET, 22 UTC = 6 PM ET
     - cron: '0 10,14,20,22 * * 1-5'
   workflow_dispatch:
     inputs:
@@ -35,3 +35,20 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          node -e "
+            const {Resend} = await import('resend');
+            const r = new Resend(process.env.RESEND_API_KEY);
+            await r.emails.send({
+              from: process.env.RESEND_FROM || 'Stock News Bot <briefing@redwooddigitalfrederick.com>',
+              to: 'koalokangaroo22@gmail.com',
+              subject: '[ALERT] Stock News Bot failed',
+              text: 'The daily briefing workflow failed. Check: https://github.com/SubliminalCoding/stock-news-bot/actions'
+            });
+            console.log('Failure alert sent');
+          "
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

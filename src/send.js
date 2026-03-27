@@ -15,10 +15,16 @@ export async function sendBriefing(config, { html, text }) {
     timeZone: config.schedule.timezone,
   });
 
+  const adminEmail = process.env.ADMIN_EMAIL || 'koalokangaroo22@gmail.com';
+  const toList = [config.email];
+  if (adminEmail && adminEmail !== config.email) {
+    toList.push(adminEmail);
+  }
+
   const { data, error } = await getResend().emails.send({
     from: process.env.RESEND_FROM || 'Stock News Bot <onboarding@resend.dev>',
-    to: config.email,
-    subject: `Your Market Briefing - ${dateStr}`,
+    to: toList,
+    subject: `${config.name}'s Market Briefing - ${dateStr}`,
     html,
     text,
   });
